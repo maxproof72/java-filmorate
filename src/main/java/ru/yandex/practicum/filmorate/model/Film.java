@@ -1,22 +1,17 @@
 package ru.yandex.practicum.filmorate.model;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import java.util.Date;
 
 /**
  * Film.
  */
-@Getter
-@Setter
-// Фильм однозначно определяется названием, датой релиза и длиной
-@EqualsAndHashCode(of = {"name", "releaseDate", "duration"})
+@Data
 public class Film {
     private Integer id;
     private String name;
     private String description;
     private Date releaseDate;
-    private int duration;
+    private Integer duration;
 }

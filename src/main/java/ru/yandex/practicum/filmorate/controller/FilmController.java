@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -8,18 +9,81 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/films")
+@Slf4j
 public class FilmController {
 
     private final Map<Integer, Film> films = new HashMap<>();
 
-    private static final int MAX_DESCRIPTION_LENGTH = 200;
-    private static final Date MOVIE_BIRTHDAY; //  = LocalDate.of(1895, Month.DECEMBER, 28).
-    //new Date(1895, Calendar.DECEMBER, 28);
+    // Максимальная длина описания фильма
+    static final int MAX_DESCRIPTION_LENGTH = 200;
+
+    // Минимальная дата релиза фильма
+    static final Date MOVIE_BIRTHDAY;
     static {
+        // Конструктор Date(y,m,d) объявлен deprecated,
+        // так что дату, как пишут, нужно создавать так.
         Calendar cal = Calendar.getInstance();
-        cal.set(1895-1900, Calendar.DECEMBER, 28);
+        cal.set(1895, Calendar.DECEMBER, 28);
         MOVIE_BIRTHDAY = cal.getTime();
     }
+
+    /**
+     * Возвращает новый id фильма
+     * @return Новый id фильма
+     */
+    private int getFreshId() {
+        return films.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
+    }
+
+
+    // region Checkers
+
+    /**
+     * Проверка даты релиза
+     * @param releaseDate Дата релиза
+     * @throws ValidationException Дата релиза не указана или некорректна
+     * @apiNote Дата релиза — не раньше 28 декабря 1895 года;
+     */
+    private void checkReleaseDate(Date releaseDate) {
+        if (releaseDate == null) {
+            throw new ValidationException("Не указана дата релиза");
+        }
+        if (releaseDate.before(MOVIE_BIRTHDAY)) {
+            throw new ValidationException("Некорректная дата релиза: " + releaseDate);
+        }
+    }
+
+    /**
+     * Проверка описания фильма
+     * @param description Описание
+     * @throws ValidationException если длина описания превышает заданное число символов
+     */
+    private void checkDescription(String description) {
+
+        if (description != null && description.length() > MAX_DESCRIPTION_LENGTH) {
+            throw new ValidationException("Слишком длинное описание (не более " +
+                    MAX_DESCRIPTION_LENGTH + " символов)");
+        }
+    }
+
+    /**
+     * Проверка длительности фильма
+     * @param duration Длительность фильма в минутах
+     * @throws ValidationException если задана нулевая или отрицательная длительность
+     */
+    private void checkDuration(Integer duration) {
+        if (duration == null) {
+            throw new ValidationException("Не указана длительность фильма");
+        }
+        if (duration <= 0) {
+            throw new ValidationException("Продолжительность фильма должна быть положительным числом");
+        }
+    }
+
+    // endregion
+
+
+    // region Mapping
 
     @GetMapping
     public Collection<Film> getFilms() {
@@ -27,73 +91,101 @@ public class FilmController {
     }
 
     @PostMapping
-    public void addFilm(@RequestBody Film film) {
+    public Film addFilm(@RequestBody Film film) {
 
-        // Название не может быть пустым;
-        final String name = film.getName();
-        if (name == null || name.isBlank()) {
-            throw new ValidationException("Название не может быть пустым");
+        try {
+            // Название не может быть пустым;
+            final String name = film.getName();
+            if (name == null || name.isBlank()) {
+                throw new ValidationException("Название фильма не может быть пустым");
+            }
+
+            // Проверка описания
+            final String description = film.getDescription();
+            if (description != null)
+                checkDescription(description);
+
+            // Проверка даты релиза
+            checkReleaseDate(film.getReleaseDate());
+
+            // Проверка продолжительности фильма
+            checkDuration(film.getDuration());
+
+            // Создание нового фильма
+            film.setId(getFreshId());
+            films.put(film.getId(), film);
+            log.info("Добавлен фильм {}", film);
+            return film;
+
+        } catch (ValidationException ve) {
+            log.warn(ve.getMessage());
+            throw ve;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw e;
         }
-
-        // Максимальная длина описания — MAX_DESCRIPTION_LENGTH символов;
-        final String description = film.getDescription();
-        if (description != null && description.length() > MAX_DESCRIPTION_LENGTH) {
-            throw new ValidationException("Максимальная длина описания — " + MAX_DESCRIPTION_LENGTH + " символов");
-        }
-
-        // Дата релиза — не раньше 28 декабря 1895 года;
-        final Date releaseDate = film.getReleaseDate();
-        if (releaseDate == null) {
-            throw new ValidationException("Дата релиза не может быть пустой");
-        }
-        checkReleaseDate(releaseDate);
-
-        // Продолжительность фильма должна быть положительным числом.
-        if (film.getDuration() <= 0) {
-            throw new ValidationException("Продолжительность фильма должна быть положительным числом");
-        }
-
-        // Проверка на дублирование (медленная, O(n))
-        // Можно сделать нормально - хранить в Set<Film>, но в ТЗ этой проверки почему-то нет.
-        // Или я просто бегу впереди паровоза.
-        if (films.values().stream().anyMatch(f -> f.equals(film))) {
-            throw new ValidationException("Дублирующая запись фильма");
-        }
-
-        film.setId(getFreshId());
-        films.put(film.getId(), film);
-    }
-
-    private int getFreshId() {
-        return films.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
-    }
-
-    private Date checkReleaseDate(Date releaseDate) {
-        if (releaseDate.before(MOVIE_BIRTHDAY)) {
-            throw new ValidationException("Дата релиза — не раньше 28 декабря 1895 года");
-        }
-        return releaseDate;
     }
 
     @PutMapping
-    public void updateFilm(@RequestBody Film film) {
+    public Film updateFilm(@RequestBody Film film) {
 
-        if (film.getId() == null) {
-            throw new ValidationException("Не указан id фильма");
+        try {
+            if (film.getId() == null) {
+                throw new ValidationException("Не указан id фильма");
+            }
+
+            Film existingFilm = films.get(film.getId());
+            if (existingFilm == null) {
+                throw new ValidationException("Фильм с id = " + film.getId() + " не найден");
+            }
+
+            // Вначале производим все проверки, а затем обновляем объект,
+            // чтобы избежать его частичного обновления
+            String newName = film.getName();
+            if (newName == null) {
+                newName = existingFilm.getName();
+            }
+
+            // Проверка нового описания (если задано)
+            String newDescription = film.getDescription();
+            if (newDescription != null && !Objects.equals(newDescription, existingFilm.getDescription())) {
+                checkDescription(newDescription);
+            } else {
+                newDescription = existingFilm.getDescription();
+            }
+
+            // Проверка новой даты релиза (если задана)
+            Date newReleaseDate = film.getReleaseDate();
+            if (newReleaseDate != null && !Objects.equals(newReleaseDate, existingFilm.getReleaseDate())) {
+                checkReleaseDate(newReleaseDate);
+            } else {
+                newReleaseDate = existingFilm.getReleaseDate();
+            }
+
+            // Проверка новой длительности (если задана)
+            Integer newDuration = film.getDuration();
+            if (newDuration != null && !Objects.equals(newDuration, existingFilm.getDuration())) {
+                checkDuration(newDuration);
+            } else {
+                newDuration = existingFilm.getDuration();
+            }
+
+            // Все проверки пройдены - можно обновляться
+            existingFilm.setName(newName);
+            existingFilm.setDescription(newDescription);
+            existingFilm.setReleaseDate(newReleaseDate);
+            existingFilm.setDuration(newDuration);
+            log.info("Информация о фильме с id = {} обновлена", film.getId());
+            return existingFilm;
+
+        } catch (ValidationException ve) {
+            log.warn(ve.getMessage());
+            throw ve;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw e;
         }
-
-        Film oldFilm = films.get(film.getId());
-        if (oldFilm == null) {
-            throw new ValidationException("Фильм с id = " + film.getId() + " не найден");
-        }
-
-        if (film.getName() != null)
-            oldFilm.setName(film.getName());
-        if (film.getDescription() != null)
-            oldFilm.setDescription(film.getDescription());
-        if (film.getReleaseDate() != null)
-            oldFilm.setReleaseDate(checkReleaseDate(film.getReleaseDate()));
-        if (film.getDuration() > 0)
-            oldFilm.setDuration(film.getDuration());
     }
+
+    // endregion
 }
