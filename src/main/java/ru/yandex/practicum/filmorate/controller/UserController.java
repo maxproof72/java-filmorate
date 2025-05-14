@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -71,12 +72,12 @@ public class UserController {
      * @param birthday Дата рождения
      * @throws ValidationException если дата рождения будет только в будущем
      */
-    private void checkBirthday(Date birthday) {
+    private void checkBirthday(LocalDate birthday) {
 
         if (birthday == null) {
             throw new ValidationException("Не указана дата рождения");
         }
-        if (birthday.after(new Date())) {
+        if (birthday.isAfter(LocalDate.now())) {
             throw new ValidationException("Дата рождения не может быть в будущем");
         }
     }
@@ -153,7 +154,7 @@ public class UserController {
             }
 
             // Проверка новой даты рождения (если задана)
-            Date newBirthday = user.getBirthday();
+            LocalDate newBirthday = user.getBirthday();
             if (newBirthday != null && !Objects.equals(existingUser.getBirthday(), newBirthday)) {
                 checkBirthday(user.getBirthday());
             } else {

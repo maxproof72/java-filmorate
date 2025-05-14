@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
+import java.time.LocalDate;
 import java.util.*;
 
 @RestController
@@ -18,14 +19,8 @@ public class FilmController {
     static final int MAX_DESCRIPTION_LENGTH = 200;
 
     // Минимальная дата релиза фильма
-    static final Date MOVIE_BIRTHDAY;
-    static {
-        // Конструктор Date(y,m,d) объявлен deprecated,
-        // так что дату, как пишут, нужно создавать так.
-        Calendar cal = Calendar.getInstance();
-        cal.set(1895, Calendar.DECEMBER, 28);
-        MOVIE_BIRTHDAY = cal.getTime();
-    }
+    static final LocalDate MOVIE_BIRTHDAY = LocalDate.of(1895, 12, 28);
+
 
     /**
      * Возвращает новый id фильма
@@ -44,11 +39,11 @@ public class FilmController {
      * @throws ValidationException Дата релиза не указана или некорректна
      * @apiNote Дата релиза — не раньше 28 декабря 1895 года;
      */
-    private void checkReleaseDate(Date releaseDate) {
+    private void checkReleaseDate(LocalDate releaseDate) {
         if (releaseDate == null) {
             throw new ValidationException("Не указана дата релиза");
         }
-        if (releaseDate.before(MOVIE_BIRTHDAY)) {
+        if (releaseDate.isBefore(MOVIE_BIRTHDAY)) {
             throw new ValidationException("Некорректная дата релиза: " + releaseDate);
         }
     }
@@ -155,7 +150,7 @@ public class FilmController {
             }
 
             // Проверка новой даты релиза (если задана)
-            Date newReleaseDate = film.getReleaseDate();
+            LocalDate newReleaseDate = film.getReleaseDate();
             if (newReleaseDate != null && !Objects.equals(newReleaseDate, existingFilm.getReleaseDate())) {
                 checkReleaseDate(newReleaseDate);
             } else {

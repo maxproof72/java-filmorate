@@ -6,24 +6,17 @@ import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.Calendar;
+import java.time.LocalDate;
 import java.util.Collection;
-import java.util.Date;
+
 
 public class FilmControllerTests {
 
     private FilmController filmController;
     private static final String LIMITED_DESCRIPTION = "X".repeat(FilmController.MAX_DESCRIPTION_LENGTH);
     private static final String TOO_BIG_DESCRIPTION = "X".repeat(FilmController.MAX_DESCRIPTION_LENGTH + 1);
-    private static final Date USUAL_DATE;
-    private static final Date TOO_OLD_DATE;
-    static {
-        Calendar cal = Calendar.getInstance();
-        cal.set(2000, Calendar.JUNE, 22);
-        USUAL_DATE = cal.getTime();
-        cal.set(1895, Calendar.DECEMBER, 27);
-        TOO_OLD_DATE = cal.getTime();
-    }
+    private static final LocalDate USUAL_DATE = LocalDate.of(2020, 6, 22);
+    private static final LocalDate TOO_OLD_DATE = FilmController.MOVIE_BIRTHDAY.minusDays(1);
 
 
     // region Helpers

@@ -6,18 +6,13 @@ import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.util.Calendar;
-import java.util.Date;
+import java.time.LocalDate;
 
 public class UserControllerTests {
 
     private UserController userController;
-    private static final Date DATE_IN_FUTURE;
-    static {
-        Calendar cal = Calendar.getInstance();
-        cal.set(2025, Calendar.DECEMBER, 15);
-        DATE_IN_FUTURE = cal.getTime();
-    }
+    private static final LocalDate DATE_IN_FUTURE = LocalDate.now().plusDays(1);
+
 
     // region Helpers
 
@@ -26,7 +21,7 @@ public class UserControllerTests {
         user.setName("John Dow");
         user.setLogin(login);
         user.setEmail("john_dow.12345@fakemail.jp");
-        user.setBirthday(new Date());
+        user.setBirthday(LocalDate.now());
     }
 
     private void restoreValidUser(User user) {
@@ -86,7 +81,7 @@ public class UserControllerTests {
         Assertions.assertThrows(ValidationException.class, () -> userController.createUser(user));
         user.setBirthday(DATE_IN_FUTURE);
         Assertions.assertThrows(ValidationException.class, () -> userController.createUser(user));
-        user.setBirthday(new Date());
+        user.setBirthday(LocalDate.now());
         Assertions.assertDoesNotThrow(() -> userController.createUser(user));
     }
 
@@ -126,7 +121,7 @@ public class UserControllerTests {
         user.setLogin(null);
         user.setBirthday(DATE_IN_FUTURE);
         Assertions.assertThrows(ValidationException.class, () -> userController.updateUser(user));
-        user.setBirthday(new Date());
+        user.setBirthday(LocalDate.now());
         Assertions.assertDoesNotThrow(() -> userController.updateUser(user));
     }
 }
