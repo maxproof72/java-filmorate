@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.validators.FilmValidator;
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -13,10 +14,10 @@ import java.util.Collection;
 public class FilmControllerTests {
 
     private FilmController filmController;
-    private static final String LIMITED_DESCRIPTION = "X".repeat(FilmController.MAX_DESCRIPTION_LENGTH);
-    private static final String TOO_BIG_DESCRIPTION = "X".repeat(FilmController.MAX_DESCRIPTION_LENGTH + 1);
+    private static final String LIMITED_DESCRIPTION = "X".repeat(FilmValidator.MAX_DESCRIPTION_LENGTH);
+    private static final String TOO_BIG_DESCRIPTION = "X".repeat(FilmValidator.MAX_DESCRIPTION_LENGTH + 1);
     private static final LocalDate USUAL_DATE = LocalDate.of(2020, 6, 22);
-    private static final LocalDate TOO_OLD_DATE = FilmController.MOVIE_BIRTHDAY.minusDays(1);
+    private static final LocalDate TOO_OLD_DATE = FilmValidator.MOVIE_BIRTHDAY.minusDays(1);
 
 
     // region Helpers
@@ -100,7 +101,7 @@ public class FilmControllerTests {
         Assertions.assertThrows(ValidationException.class, () -> filmController.addFilm(film));
         film.setReleaseDate(TOO_OLD_DATE);
         Assertions.assertThrows(ValidationException.class, () -> filmController.addFilm(film));
-        film.setReleaseDate(FilmController.MOVIE_BIRTHDAY);
+        film.setReleaseDate(FilmValidator.MOVIE_BIRTHDAY);
         Assertions.assertDoesNotThrow(() -> filmController.addFilm(film));
         restoreValidFilm(film);
 
@@ -119,12 +120,12 @@ public class FilmControllerTests {
     public void testUpdateFilm() {
 
         // Создание записи фильма
-        int id = filmController.addFilm(makeValidFilm("Film1")).getId();
+        long id = filmController.addFilm(makeValidFilm("Film1")).getId();
 
         // Проверка корректного id
         Film film = new Film();
         Assertions.assertThrows(ValidationException.class, () -> filmController.updateFilm(film));
-        film.setId(10);
+        film.setId(10L);
         Assertions.assertThrows(ValidationException.class, () -> filmController.updateFilm(film));
 
         // Проверка обновления названия фильма
@@ -147,7 +148,7 @@ public class FilmControllerTests {
         film.setDescription(null);
         film.setReleaseDate(TOO_OLD_DATE);
         Assertions.assertThrows(ValidationException.class, () -> filmController.updateFilm(film));
-        film.setReleaseDate(FilmController.MOVIE_BIRTHDAY);
+        film.setReleaseDate(FilmValidator.MOVIE_BIRTHDAY);
         Assertions.assertDoesNotThrow(() -> filmController.updateFilm(film));
 
         // Проверка длительности

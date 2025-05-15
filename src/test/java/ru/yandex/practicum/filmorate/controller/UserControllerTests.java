@@ -89,12 +89,12 @@ public class UserControllerTests {
     public void testUpdateUser() {
 
         // Создание пользовательского профиля
-        int id = userController.createUser(makeValidUser("Bob123")).getId();
+        long id = userController.createUser(makeValidUser("Bob123")).getId();
 
         // Проверка корректного id
         User user = new User();
         Assertions.assertThrows(ValidationException.class, () -> userController.updateUser(user));
-        user.setId(10);
+        user.setId(10L);
         Assertions.assertThrows(ValidationException.class, () -> userController.updateUser(user));
 
         // Проверка обновления адреса э.п.

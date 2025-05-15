@@ -4,10 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.validators.UserValidator;
 
 import java.time.LocalDate;
 import java.util.*;
-import java.util.regex.Pattern;
 
 
 /**
@@ -18,74 +18,10 @@ import java.util.regex.Pattern;
 @Slf4j
 public class UserController {
 
-    private static final Pattern emailPattern =
-            Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    private final Map<Long, User> users = new HashMap<>();
 
-    private final Map<Integer, User> users = new HashMap<>();
+    private long id;
 
-
-    /**
-     * Возвращает новый id пользователя
-     * @return Новый id пользователя
-     */
-    private int getFreshId() {
-        return users.keySet().stream()
-                .max(Integer::compareTo)
-                .orElse(0) + 1;
-    }
-
-
-    // region Checkers
-
-    /**
-     * Проверка адреса электронной почты
-     * @param email Адрес электронной почты
-     * @throws ValidationException если адрес пустой или некорректный
-     */
-    private void checkEmail(String email) {
-
-        if (email == null) {
-            throw new ValidationException("Электронная почта не может быть пустой");
-        }
-        if (!emailPattern.matcher(email).matches()) {
-            throw new ValidationException("Некорректный адрес электронной почты: " + email);
-        }
-    }
-
-    /**
-     * Проверка логина
-     * @param login Логин
-     * @throws ValidationException если логин пустой или содержит пробельные символы
-     */
-    private void checkLogin(String login) {
-
-        if (login == null || login.isBlank()) {
-            throw new ValidationException("Логин не может быть пустым");
-        }
-        if (login.matches(".*\\W.*")) {
-            throw new ValidationException("Логин не может содержать пробелы");
-        }
-    }
-
-    /**
-     * Проверка даты рождения
-     * @param birthday Дата рождения
-     * @throws ValidationException если дата рождения будет только в будущем
-     */
-    private void checkBirthday(LocalDate birthday) {
-
-        if (birthday == null) {
-            throw new ValidationException("Не указана дата рождения");
-        }
-        if (birthday.isAfter(LocalDate.now())) {
-            throw new ValidationException("Дата рождения не может быть в будущем");
-        }
-    }
-
-    // endregion
-
-
-    // region Mapping
 
     @GetMapping
     public Collection<User> getUsers() {
@@ -97,16 +33,16 @@ public class UserController {
 
         try {
             // Проверка адреса электронной почты
-            checkEmail(user.getEmail());
+            UserValidator.checkEmail(user.getEmail());
 
             // Проверка логина
-            checkLogin(user.getLogin());
+            UserValidator.checkLogin(user.getLogin());
 
             // Проверка даты рождения
-            checkBirthday(user.getBirthday());
+            UserValidator.checkBirthday(user.getBirthday());
 
             // Создание нового пользователя
-            user.setId(getFreshId());
+            user.setId(++id);
             if (user.getName() == null || user.getName().isBlank()) {
                 user.setName(user.getLogin());
             }
@@ -140,7 +76,7 @@ public class UserController {
             // чтобы не получить частично обновленный объект
             String newEmail = user.getEmail();
             if (newEmail != null && !Objects.equals(existingUser.getLogin(), newEmail)) {
-                checkEmail(user.getEmail());
+                UserValidator.checkEmail(user.getEmail());
             } else {
                 newEmail = existingUser.getEmail();
             }
@@ -148,7 +84,7 @@ public class UserController {
             // Проверка нового логина (если задан)
             String newLogin = user.getLogin();
             if (newLogin != null && !Objects.equals(existingUser.getLogin(), newLogin)) {
-                checkLogin(user.getLogin());
+                UserValidator.checkLogin(user.getLogin());
             } else {
                 newLogin = existingUser.getLogin();
             }
@@ -156,7 +92,7 @@ public class UserController {
             // Проверка новой даты рождения (если задана)
             LocalDate newBirthday = user.getBirthday();
             if (newBirthday != null && !Objects.equals(existingUser.getBirthday(), newBirthday)) {
-                checkBirthday(user.getBirthday());
+                UserValidator.checkBirthday(user.getBirthday());
             } else {
                 newBirthday = existingUser.getBirthday();
             }
@@ -179,6 +115,4 @@ public class UserController {
             throw e;
         }
     }
-
-    // endregion
 }

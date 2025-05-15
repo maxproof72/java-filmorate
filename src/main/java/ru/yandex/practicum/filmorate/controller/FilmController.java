@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.validators.FilmValidator;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -13,72 +14,10 @@ import java.util.*;
 @Slf4j
 public class FilmController {
 
-    private final Map<Integer, Film> films = new HashMap<>();
+    private final Map<Long, Film> films = new HashMap<>();
 
-    // Максимальная длина описания фильма
-    static final int MAX_DESCRIPTION_LENGTH = 200;
+    private long id;
 
-    // Минимальная дата релиза фильма
-    static final LocalDate MOVIE_BIRTHDAY = LocalDate.of(1895, 12, 28);
-
-
-    /**
-     * Возвращает новый id фильма
-     * @return Новый id фильма
-     */
-    private int getFreshId() {
-        return films.keySet().stream().max(Integer::compareTo).orElse(0) + 1;
-    }
-
-
-    // region Checkers
-
-    /**
-     * Проверка даты релиза
-     * @param releaseDate Дата релиза
-     * @throws ValidationException Дата релиза не указана или некорректна
-     * @apiNote Дата релиза — не раньше 28 декабря 1895 года;
-     */
-    private void checkReleaseDate(LocalDate releaseDate) {
-        if (releaseDate == null) {
-            throw new ValidationException("Не указана дата релиза");
-        }
-        if (releaseDate.isBefore(MOVIE_BIRTHDAY)) {
-            throw new ValidationException("Некорректная дата релиза: " + releaseDate);
-        }
-    }
-
-    /**
-     * Проверка описания фильма
-     * @param description Описание
-     * @throws ValidationException если длина описания превышает заданное число символов
-     */
-    private void checkDescription(String description) {
-
-        if (description != null && description.length() > MAX_DESCRIPTION_LENGTH) {
-            throw new ValidationException("Слишком длинное описание (не более " +
-                    MAX_DESCRIPTION_LENGTH + " символов)");
-        }
-    }
-
-    /**
-     * Проверка длительности фильма
-     * @param duration Длительность фильма в минутах
-     * @throws ValidationException если задана нулевая или отрицательная длительность
-     */
-    private void checkDuration(Integer duration) {
-        if (duration == null) {
-            throw new ValidationException("Не указана длительность фильма");
-        }
-        if (duration <= 0) {
-            throw new ValidationException("Продолжительность фильма должна быть положительным числом");
-        }
-    }
-
-    // endregion
-
-
-    // region Mapping
 
     @GetMapping
     public Collection<Film> getFilms() {
@@ -98,16 +37,16 @@ public class FilmController {
             // Проверка описания
             final String description = film.getDescription();
             if (description != null)
-                checkDescription(description);
+                FilmValidator.checkDescription(description);
 
             // Проверка даты релиза
-            checkReleaseDate(film.getReleaseDate());
+            FilmValidator.checkReleaseDate(film.getReleaseDate());
 
             // Проверка продолжительности фильма
-            checkDuration(film.getDuration());
+            FilmValidator.checkDuration(film.getDuration());
 
             // Создание нового фильма
-            film.setId(getFreshId());
+            film.setId(++id);
             films.put(film.getId(), film);
             log.info("Добавлен фильм {}", film);
             return film;
@@ -144,7 +83,7 @@ public class FilmController {
             // Проверка нового описания (если задано)
             String newDescription = film.getDescription();
             if (newDescription != null && !Objects.equals(newDescription, existingFilm.getDescription())) {
-                checkDescription(newDescription);
+                FilmValidator.checkDescription(newDescription);
             } else {
                 newDescription = existingFilm.getDescription();
             }
@@ -152,7 +91,7 @@ public class FilmController {
             // Проверка новой даты релиза (если задана)
             LocalDate newReleaseDate = film.getReleaseDate();
             if (newReleaseDate != null && !Objects.equals(newReleaseDate, existingFilm.getReleaseDate())) {
-                checkReleaseDate(newReleaseDate);
+                FilmValidator.checkReleaseDate(newReleaseDate);
             } else {
                 newReleaseDate = existingFilm.getReleaseDate();
             }
@@ -160,7 +99,7 @@ public class FilmController {
             // Проверка новой длительности (если задана)
             Integer newDuration = film.getDuration();
             if (newDuration != null && !Objects.equals(newDuration, existingFilm.getDuration())) {
-                checkDuration(newDuration);
+                FilmValidator.checkDuration(newDuration);
             } else {
                 newDuration = existingFilm.getDuration();
             }
@@ -181,6 +120,4 @@ public class FilmController {
             throw e;
         }
     }
-
-    // endregion
 }
