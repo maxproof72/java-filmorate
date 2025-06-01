@@ -19,4 +19,5 @@ public class Film {
     private LocalDate releaseDate;
     private Integer duration;
     private final Set<Long> likes = new HashSet<>();
+    private Integer rate = 0;
 }

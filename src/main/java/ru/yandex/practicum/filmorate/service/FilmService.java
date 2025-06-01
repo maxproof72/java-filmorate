@@ -30,6 +30,7 @@ public class FilmService {
         Film film = filmStorage.getFilm(filmId);
         User user = userStorage.getUser(userId);
         film.getLikes().add(user.getId());
+        film.setRate(film.getLikes().size());
         log.info("Пользователь {} поставил лайк фильму {}", userId, filmId);
     }
 
@@ -38,13 +39,14 @@ public class FilmService {
         Film film = filmStorage.getFilm(filmId);
         User user = userStorage.getUser(userId);
         film.getLikes().remove(user.getId());
+        film.setRate(film.getLikes().size());
         log.info("Пользователь {} снял лайк у фильма {}", userId, filmId);
     }
 
     public List<Film> getPopularFilms(int count) {
 
         var popularFilms = filmStorage.getFilms().stream()
-                .sorted(Comparator.comparingInt(film -> ((Film) film).getLikes().size()).reversed())
+                .sorted(Comparator.comparingInt(film -> ((Film) film).getRate()).reversed())
                 .limit(count)
                 .toList();
         log.trace("Запрос популярных фильмов возвращает {} записей", popularFilms.size());
