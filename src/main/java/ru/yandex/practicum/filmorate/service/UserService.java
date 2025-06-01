@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -69,5 +70,21 @@ public class UserService {
         var commonFriends = commonFriendIds.stream().map(userStorage::getUser).toList();
         log.trace("Запрос общих друзей пользователей {} и {} вернул {} записей", userId1, userId2, commonFriends.size());
         return commonFriends;
+    }
+
+    public Collection<User> getUsers() {
+        return userStorage.getUsers();
+    }
+
+    public User getUser(long id) {
+        return userStorage.getUser(id);
+    }
+
+    public User addUser(User user) {
+        return userStorage.addUser(user);
+    }
+
+    public User updateUser(User user) {
+        return userStorage.updateUser(user);
     }
 }
