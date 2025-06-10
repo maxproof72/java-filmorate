@@ -2,9 +2,9 @@
 -- таблица пользователей
 CREATE TABLE users (
   id INTEGER PRIMARY KEY,       -- PK
-  email TEXT NOT NULL,          -- электронная почта
-  login TEXT NOT NULL,          -- логин
-  name TEXT NOT NULL,           -- отображаемое имя
+  email VARCHAR(255) NOT NULL,  -- электронная почта
+  login VARCHAR(64) NOT NULL,   -- логин
+  name VARCHAR(100) NOT NULL,   -- отображаемое имя
   birthday DATE                 -- день рождения
 );
 
@@ -65,7 +65,7 @@ WHERE accepted AND source_id=5);
 -- таблица перечня жанров
 CREATE TABLE genre (
   id INTEGER PRIMARY KEY,       -- PK
-  name TEXT NOT NULL            -- наименование жанра
+  name VARCHAR(32) NOT NULL     -- наименование жанра
 );
 
 -- test data
@@ -95,7 +95,7 @@ INSERT INTO mpa_rating VALUES(0005,	'NC-17', 'Лицам до 18 лет прос
 -- таблица фильмов
 CREATE TABLE films (
   id INTEGER PRIMARY KEY,       -- PK
-  name TEXT NOT NULL,           -- название фильма
+  name VARCHAR(255) NOT NULL,   -- название фильма
   description TEXT,             -- описание фильма
   release_date DATE NOT NULL,   -- дата выхода
   duration INTEGER,             -- длительность в минутах
